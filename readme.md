@@ -1,78 +1,106 @@
-# ABC Technologies — AI Customer Support System
-AI-Powered Customer Support Automation using LangGraph, LangChain, Ollama, and SQLite.
+ `README.md`
+# College Student AI Assistant — LangChain & Ollama
+
+A local, privacy-first AI Assistant and LangChain toolkit designed for academic administrative inquiries, student record lookups, and automated academic calculations. Powered by LangChain and a local Ollama model (`qwen2.5:3b`).
+
+---
+
 ## Project Structure
-customer_support/
-├── main.py                   ← Full source code (all 10 tasks)
-├── memory.db                 ← SQLite memory (auto-created on first run)
-├── README.md                 ← This file
-└── documents/
-    ├── company_policy.txt    ← Refund, cancellation, escalation policies
-    ├── pricing_guide.txt     ← Subscription plans and pricing
-    ├── technical_manual.txt  ← Troubleshooting and technical help
-    └── faq.txt               ← Frequently asked questions
-## Setup Instructions
+.
+├── college_assistant.py     # Main interactive CLI tool-calling agent
+├── custom_tools.py          # Zero-shot ReAct agent implementation with custom tools
+├── parser.py                # Structured output extraction using Pydantic & JsonOutputParser
+├── lcel.py                  # LangChain Expression Language (LCEL) invocation, streaming, and batching
+├── prompttemplate.py        # ChatPromptTemplate formatting demonstrations
+├── model.py                 # Direct Ollama LLM integration baseline
+├── report.py                # Conversation history buffer and JSON session export
+├── session_report.json      # Serialized conversation session logs
+└── requirements.txt         # Project dependencies
 
-### Step 1 — Activate your virtual environment
+```
+
+---
+
+## Core Features & Modules
+
+### 1. Main Interactive Assistant (`college_assistant.py`)
+
+A tool-calling agent powered by `create_tool_calling_agent` that answers student queries via specialized tools:
+
+* **Attendance Calculator:** Computes percentage and exam eligibility (minimum 75% threshold).
+* **Result Calculator:** Computes 5-subject average, letter grade (A–D), and pass/fail status.
+* **Fee Balance Calculator:** Tracks pending course fee balances.
+* **Library Fine Calculator:** Calculates overdue book fees (₹5/day).
+* **Hostel Fee Calculator:** Calculates boarding costs based on stay duration.
+* **Student Profile Lookup:** Queries the mock student database by ID.
+
+### 2. LangChain Foundations & ReAct Agent
+
+* **ReAct Agent (`custom_tools.py`):** Uses `ZERO_SHOT_REACT_DESCRIPTION` with a safe mathematical evaluator and student status lookup.
+* **Structured JSON Parser (`parser.py`):** Extracts unstructured student notes directly into typed Pydantic models (`StudentProfile`).
+* **LCEL Pipelines (`lcel.py`):** Demonstrates single invoke, token-by-token streaming, and parallel batch queries across technical domains.
+* **Conversation Auditing (`report.py`):** Manages `ConversationBufferWindowMemory` and exports interactions to `session_report.json`.
+
+---
+
+## Setup & Installation
+
+### Step 1 — Create and Activate Virtual Environment
+
 ```bash
-# Windows (from agentic_frwk folder)
+# Windows
+python -m venv venv
 venv\Scripts\activate
-```
 
-### Step 2 — Install required packages
+# macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+
+```
+### Step 2 — Install Dependencies
 ```bash
-pip install langgraph langchain langchain-ollama langchain-core langchain-community
-```
+pip install -r requirements.txt
 
-### Step 3 — Pull the Ollama model (run once)
+```
+### Step 3 — Pull the Local LLM via Ollama
+
+Ensure [Ollama](https://ollama.com/) is installed and running, then pull the target model:
+
 ```bash
 ollama pull qwen2.5:3b
-```
 
-### Step 4 — Run the system
+```
+---
+## Usage Guide
+### Run the Interactive College Assistant
 ```bash
-cd customer_support
-python main.py
+python college_assistant.py
+
+```
+**Example Queries:**
+
+* *"Can student S001 take the exam if they attended 42 out of 50 classes?"*
+* *"Check fee balance for course fee 85000 and paid 60000."*
+* *"Look up profile for student S002."*
+* *"Calculate grade for marks: 85, 78, 92, 66, 74."*
+
+### Run Individual Demonstrations
+
+```bash
+# Structured JSON extraction
+python parser.py
+
+# LCEL invoke, streaming, and batching
+python lcel.py
+
+# ReAct Agent with safe calculator
+python custom_tools.py
+
+# Export conversation memory to JSON
+python report.py
+
 ```
 
-## What Happens When You Run It
-
-The system will automatically process 5 demonstration queries:
-
-| Query | Department | Special Feature |
-|-------|-----------|-----------------|
-| Pricing plans? | Sales | RAG retrieves pricing_guide.txt |
-| Forgot password | Account | RAG retrieves faq.txt |
-| App crashes on upload | Technical | RAG retrieves technical_manual.txt |
-| Need a refund | Billing | ⚠ PAUSES for human approval |
-| What was my previous issue? | Memory | Reads from SQLite database |
-
-### For Query 4 (Refund):
-The system will pause and ask you:
 ```
-SUPERVISOR: Approve this request? (yes/no):
+
 ```
-Type `yes` to approve or `no` to reject.
-
-## Tasks Implemented
-
-| Task | Description | Location in code |
-|------|-------------|-----------------|
-| Task 1 | LangGraph Workflow | `build_graph()` function |
-| Task 2 | State Structure | `SupportState` TypedDict |
-| Task 3 | Intent Classification | `classify_intent()` node |
-| Task 4 | Conditional Routing | `route_to_department()` |
-| Task 5 | Department Agents | `sales_agent`, `technical_agent`, `billing_agent`, `account_agent` |
-| Task 6 | RAG Pipeline | `rag_retrieval()` + `retrieve_context()` |
-| Task 7 | SQLite Memory | `init_memory_db()`, `save_message()`, `load_history()` |
-| Task 8 | Human-in-the-Loop | `human_in_the_loop()` node |
-| Task 9 | Supervisor Agent | `supervisor_agent()` node |
-| Task 10 | Demonstration | `if __name__ == "__main__"` block |
-
-## Human-in-the-Loop Triggers
-
-The following request types require supervisor approval:
-- Refund requests
-- Subscription cancellation
-- Account closure
-- Compensation requests
-- Escalation to management
